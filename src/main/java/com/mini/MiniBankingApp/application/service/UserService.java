@@ -2,6 +2,7 @@ package com.mini.MiniBankingApp.application.service;
 
 import com.mini.MiniBankingApp.application.dto.*;
 import com.mini.MiniBankingApp.application.mapper.UserMapper;
+import com.mini.MiniBankingApp.domain.user.RefreshToken;
 import com.mini.MiniBankingApp.domain.user.User;
 import com.mini.MiniBankingApp.exception.UserAlreadyExistsException;
 import com.mini.MiniBankingApp.exception.UserNotFoundException;
@@ -59,10 +60,11 @@ public class UserService {
         User user = userRepository.findByUsername(request.getUsername())
             .orElseThrow(() -> new UserNotFoundException("User not found"));
         
-        // Generate JWT token
+        // Generate JWT token and refresh token
         String token = jwtService.generateToken(user.getUsername());
+        RefreshToken refreshToken = jwtService.generateRefreshToken(user);
         
-        return new LoginResponse(token, userMapper.toResponse(user));
+        return new LoginResponse(token, refreshToken.getToken(), userMapper.toResponse(user));
     }
     
     @Transactional(readOnly = true)
@@ -71,5 +73,20 @@ public class UserService {
             .orElseThrow(() -> new UserNotFoundException("User not found"));
         
         return userMapper.toResponse(user);
+    }
+    
+    public LoginResponse refreshToken(RefreshTokenRequest request) {
+        String newAccessToken = jwtService.refreshAccessToken(request.getRefreshToken());
+        
+        // Get user from refresh token to include in response
+        String username = jwtService.getUsernameFromToken(newAccessToken);
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new UserNotFoundException("User not found"));
+        
+        return new LoginResponse(newAccessToken, userMapper.toResponse(user));
+    }
+    
+    public void logout(String refreshToken) {
+        jwtService.revokeRefreshToken(refreshToken);
     }
 }

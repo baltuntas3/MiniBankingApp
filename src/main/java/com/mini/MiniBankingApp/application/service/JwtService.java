@@ -1,26 +1,31 @@
 package com.mini.MiniBankingApp.application.service;
 
+import com.mini.MiniBankingApp.domain.user.RefreshToken;
+import com.mini.MiniBankingApp.domain.user.User;
+import com.mini.MiniBankingApp.infrastructure.config.JwtProperties;
+import com.mini.MiniBankingApp.infrastructure.repository.RefreshTokenRepository;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
-import org.springframework.beans.factory.annotation.Value;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.security.Key;
+import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 import java.util.function.Function;
 
 @Service
+@RequiredArgsConstructor
 public class JwtService {
     
-    @Value("${jwt.secret:mySecretKey}")
-    private String secret;
-    
-    @Value("${jwt.expiration:86400000}") // 24 hours
-    private Long expiration;
+    private final RefreshTokenRepository refreshTokenRepository;
+    private final JwtProperties jwtProperties;
     
     public String generateToken(String username) {
         Map<String, Object> claims = new HashMap<>();
@@ -32,7 +37,7 @@ public class JwtService {
                 .setClaims(claims)
                 .setSubject(subject)
                 .setIssuedAt(new Date(System.currentTimeMillis()))
-                .setExpiration(new Date(System.currentTimeMillis() + expiration))
+                .setExpiration(new Date(System.currentTimeMillis() + jwtProperties.getExpiration().toMillis()))
                 .signWith(getSigningKey(), SignatureAlgorithm.HS512)
                 .compact();
     }
@@ -69,7 +74,44 @@ public class JwtService {
     }
     
     private Key getSigningKey() {
-        byte[] keyBytes = secret.getBytes();
+        byte[] keyBytes = jwtProperties.getSecret().getBytes();
         return Keys.hmacShaKeyFor(keyBytes);
+    }
+    
+    @Transactional
+    public RefreshToken generateRefreshToken(User user) {
+        // Revoke existing refresh tokens for this user
+        refreshTokenRepository.revokeAllByUser(user);
+        
+        // Generate new refresh token
+        String tokenValue = UUID.randomUUID().toString();
+        LocalDateTime expiresAt = LocalDateTime.now().plus(jwtProperties.getRefresh().getExpiration());
+        
+        RefreshToken refreshToken = new RefreshToken(tokenValue, user, expiresAt);
+        return refreshTokenRepository.save(refreshToken);
+    }
+    
+    @Transactional
+    public String refreshAccessToken(String refreshTokenValue) {
+        RefreshToken refreshToken = refreshTokenRepository.findByToken(refreshTokenValue)
+                .orElseThrow(() -> new RuntimeException("Invalid refresh token"));
+        
+        if (!refreshToken.isValid()) {
+            throw new RuntimeException("Refresh token is expired or revoked");
+        }
+        
+        // Generate new access token
+        return generateToken(refreshToken.getUser().getUsername());
+    }
+    
+    @Transactional
+    public void revokeRefreshToken(String refreshTokenValue) {
+        refreshTokenRepository.findByToken(refreshTokenValue)
+                .ifPresent(RefreshToken::revoke);
+    }
+    
+    @Transactional
+    public void revokeAllUserTokens(User user) {
+        refreshTokenRepository.revokeAllByUser(user);
     }
 }

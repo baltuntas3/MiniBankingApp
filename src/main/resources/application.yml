@@ -27,7 +27,9 @@ spring:
 # JWT Configuration
 jwt:
   secret: mySecretKeyForJWTTokenGenerationAndValidation123456789
-  expiration: 86400000 # 24 hours in milliseconds
+  expiration: PT24H # 24 hours
+  refresh:
+    expiration: P7D # 7 days
 
 # Swagger Configuration
 springdoc:

@@ -57,4 +57,27 @@ public class UserController {
         UserResponse userResponse = userService.getUserByUsername(username);
         return ResponseEntity.ok(userResponse);
     }
+    
+    @PostMapping("/refresh")
+    @Operation(summary = "Refresh access token", description = "Uses refresh token to obtain a new access token")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Access token refreshed successfully"),
+        @ApiResponse(responseCode = "401", description = "Invalid or expired refresh token"),
+        @ApiResponse(responseCode = "422", description = "Validation failed")
+    })
+    public ResponseEntity<LoginResponse> refreshToken(@Valid @RequestBody RefreshTokenRequest request) {
+        LoginResponse loginResponse = userService.refreshToken(request);
+        return ResponseEntity.ok(loginResponse);
+    }
+    
+    @PostMapping("/logout")
+    @Operation(summary = "User logout", description = "Revokes the refresh token to logout the user")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "User logged out successfully"),
+        @ApiResponse(responseCode = "400", description = "Invalid request")
+    })
+    public ResponseEntity<Void> logout(@Valid @RequestBody RefreshTokenRequest request) {
+        userService.logout(request.getRefreshToken());
+        return ResponseEntity.ok().build();
+    }
 }
