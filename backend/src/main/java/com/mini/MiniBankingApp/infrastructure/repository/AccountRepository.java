@@ -24,8 +24,8 @@ public interface AccountRepository extends JpaRepository<Account, UUID> {
     Optional<AccountBalanceProjection> findProjectedById(UUID accountId);
     
     @Query("SELECT a FROM Account a WHERE a.userId = :userId AND " +
-           "(:number IS NULL OR LOWER(a.number) LIKE LOWER(CONCAT('%', :number, '%'))) AND " +
-           "(:name IS NULL OR LOWER(a.name) LIKE LOWER(CONCAT('%', :name, '%')))")
+           "(:number IS NULL OR :number = '' OR a.number LIKE CONCAT('%', :number, '%')) AND " +
+           "(:name IS NULL OR :name = '' OR a.name LIKE CONCAT('%', :name, '%'))")
     List<Account> searchAccounts(@Param("userId") UUID userId, 
                                 @Param("number") String number, 
                                 @Param("name") String name);

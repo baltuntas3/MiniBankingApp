@@ -1,9 +1,10 @@
 package com.mini.MiniBankingApp.infrastructure.web;
 
-import com.mini.MiniBankingApp.application.dto.*;
+import com.mini.MiniBankingApp.application.dto.AccountCreateRequest;
+import com.mini.MiniBankingApp.application.dto.AccountResponse;
+import com.mini.MiniBankingApp.application.dto.AccountSearchRequest;
+import com.mini.MiniBankingApp.application.dto.AccountUpdateRequest;
 import com.mini.MiniBankingApp.application.service.AccountService;
-import com.mini.MiniBankingApp.infrastructure.security.annotation.AccountId;
-import com.mini.MiniBankingApp.infrastructure.security.annotation.RequireAccountOwnership;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;

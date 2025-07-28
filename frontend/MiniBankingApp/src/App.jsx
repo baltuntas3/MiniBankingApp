@@ -1,35 +1,80 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { useEffect } from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
+import { Provider } from 'jotai';
+import { useAuth } from './hooks/useAuth';
+import { setNavigateFunction } from './utils/navigationUtils';
+import LoginForm from './components/LoginForm';
+import RegisterForm from './components/RegisterForm';
+import Dashboard from './pages/Dashboard';
+import AccountsList from './pages/AccountsList';
+import AccountDetails from './pages/AccountDetails';
+import AccountForm from './components/AccountForm';
+import TransferForm from './components/TransferForm';
+import TransactionHistory from './pages/TransactionHistory';
+import NotFound from './pages/NotFound';
+import ProtectedRoute from './components/ProtectedRoute';
+import './App.css';
 
-function App() {
-  const [count, setCount] = useState(0)
+function AppContent() {
+  const { checkAuthStatus } = useAuth();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    // Set navigate function for global use
+    setNavigateFunction(navigate);
+    checkAuthStatus();
+  }, [navigate, checkAuthStatus]);
 
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+    <div className="app">
+      <Routes>
+        <Route path="/auth/login" element={<LoginForm />} />
+        <Route path="/register" element={<RegisterForm />} />
+        <Route path="/dashboard" element={
+          <ProtectedRoute>
+            <Dashboard />
+          </ProtectedRoute>
+        } />
+        <Route path="/accounts" element={
+          <ProtectedRoute>
+            <AccountsList />
+          </ProtectedRoute>
+        } />
+        <Route path="/accounts/create" element={
+          <ProtectedRoute>
+            <AccountForm />
+          </ProtectedRoute>
+        } />
+        <Route path="/accounts/:id" element={
+          <ProtectedRoute>
+            <AccountDetails />
+          </ProtectedRoute>
+        } />
+        <Route path="/transfer" element={
+          <ProtectedRoute>
+            <TransferForm />
+          </ProtectedRoute>
+        } />
+        <Route path="/transactions" element={
+          <ProtectedRoute>
+            <TransactionHistory />
+          </ProtectedRoute>
+        } />
+        <Route path="/" element={<Navigate to="/dashboard" replace />} />
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+    </div>
+  );
 }
 
-export default App
+function App() {
+  return (
+    <Provider>
+      <Router>
+        <AppContent />
+      </Router>
+    </Provider>
+  );
+}
+
+export default App;
