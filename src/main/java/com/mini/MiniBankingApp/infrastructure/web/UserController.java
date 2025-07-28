@@ -29,12 +29,8 @@ public class UserController {
         @ApiResponse(responseCode = "422", description = "Validation failed")
     })
     public ResponseEntity<UserResponse> registerUser(@Valid @RequestBody UserRegistrationRequest request) {
-        try {
-            UserResponse userResponse = userService.registerUser(request);
-            return ResponseEntity.status(HttpStatus.CREATED).body(userResponse);
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().build();
-        }
+        UserResponse userResponse = userService.registerUser(request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(userResponse);
     }
     
     @PostMapping("/login")
@@ -45,12 +41,8 @@ public class UserController {
         @ApiResponse(responseCode = "422", description = "Validation failed")
     })
     public ResponseEntity<LoginResponse> loginUser(@Valid @RequestBody UserLoginRequest request) {
-        try {
-            LoginResponse loginResponse = userService.authenticateUser(request);
-            return ResponseEntity.ok(loginResponse);
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        }
+        LoginResponse loginResponse = userService.authenticateUser(request);
+        return ResponseEntity.ok(loginResponse);
     }
     
     @GetMapping("/profile")
@@ -61,12 +53,8 @@ public class UserController {
         @ApiResponse(responseCode = "404", description = "User not found")
     })
     public ResponseEntity<UserResponse> getUserProfile(Authentication authentication) {
-        try {
-            String username = authentication.getName();
-            UserResponse userResponse = userService.getUserByUsername(username);
-            return ResponseEntity.ok(userResponse);
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.notFound().build();
-        }
+        String username = authentication.getName();
+        UserResponse userResponse = userService.getUserByUsername(username);
+        return ResponseEntity.ok(userResponse);
     }
 }

@@ -3,6 +3,8 @@ package com.mini.MiniBankingApp.application.service;
 import com.mini.MiniBankingApp.application.dto.*;
 import com.mini.MiniBankingApp.application.mapper.UserMapper;
 import com.mini.MiniBankingApp.domain.user.User;
+import com.mini.MiniBankingApp.exception.UserAlreadyExistsException;
+import com.mini.MiniBankingApp.exception.UserNotFoundException;
 import com.mini.MiniBankingApp.infrastructure.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -26,12 +28,12 @@ public class UserService {
     public UserResponse registerUser(UserRegistrationRequest request) {
         // Check if username already exists
         if (userRepository.findByUsername(request.getUsername()).isPresent()) {
-            throw new IllegalArgumentException("Username already exists");
+            throw new UserAlreadyExistsException("Username already exists");
         }
         
         // Check if email already exists
         if (userRepository.findByEmail(request.getEmail()).isPresent()) {
-            throw new IllegalArgumentException("Email already exists");
+            throw new UserAlreadyExistsException("Email already exists");
         }
         
         // Map DTO to entity using MapStruct
@@ -55,7 +57,7 @@ public class UserService {
         
         // Get user details
         User user = userRepository.findByUsername(request.getUsername())
-            .orElseThrow(() -> new IllegalArgumentException("User not found"));
+            .orElseThrow(() -> new UserNotFoundException("User not found"));
         
         // Generate JWT token
         String token = jwtService.generateToken(user.getUsername());
@@ -66,7 +68,7 @@ public class UserService {
     @Transactional(readOnly = true)
     public UserResponse getUserByUsername(String username) {
         User user = userRepository.findByUsername(username)
-            .orElseThrow(() -> new IllegalArgumentException("User not found"));
+            .orElseThrow(() -> new UserNotFoundException("User not found"));
         
         return userMapper.toResponse(user);
     }
