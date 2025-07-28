@@ -1,9 +1,8 @@
 package com.mini.MiniBankingApp.domain.account;
 
 import com.mini.MiniBankingApp.domain.common.BaseEntity;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Table;
+import com.mini.MiniBankingApp.exception.InsufficientFundsException;
+import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -12,9 +11,11 @@ import java.util.UUID;
 
 @Entity
 @Table(name = "accounts")
+@Inheritance(strategy = InheritanceType.SINGLE_TABLE)
+@DiscriminatorColumn(name = "account_type", discriminatorType = DiscriminatorType.STRING)
 @Getter
 @NoArgsConstructor
-public class Account extends BaseEntity {
+public abstract class Account extends BaseEntity {
     
     @Column(name = "user_id", nullable = false)
     private UUID userId;

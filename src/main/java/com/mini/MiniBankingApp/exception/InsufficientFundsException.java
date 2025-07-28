@@ -1,4 +1,4 @@
-package com.mini.MiniBankingApp.domain.account;
+package com.mini.MiniBankingApp.exception;
 
 public class InsufficientFundsException extends RuntimeException {
     
