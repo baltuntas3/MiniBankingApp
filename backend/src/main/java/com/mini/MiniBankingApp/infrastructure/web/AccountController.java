@@ -2,6 +2,8 @@ package com.mini.MiniBankingApp.infrastructure.web;
 
 import com.mini.MiniBankingApp.application.dto.*;
 import com.mini.MiniBankingApp.application.service.AccountService;
+import com.mini.MiniBankingApp.infrastructure.security.annotation.AccountId;
+import com.mini.MiniBankingApp.infrastructure.security.annotation.RequireAccountOwnership;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -10,6 +12,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
@@ -55,12 +58,14 @@ public class AccountController {
     }
     
     @PutMapping("/{id}")
+    @PreAuthorize("@accountAccess.hasAccountAccess(#id)")
     @Operation(summary = "Update account", description = "Updates the selected account for the authenticated user")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "Account updated successfully"),
         @ApiResponse(responseCode = "400", description = "Invalid input"),
         @ApiResponse(responseCode = "401", description = "User not authenticated"),
-        @ApiResponse(responseCode = "404", description = "Account not found or access denied"),
+        @ApiResponse(responseCode = "403", description = "Access denied - not account owner"),
+        @ApiResponse(responseCode = "404", description = "Account not found"),
         @ApiResponse(responseCode = "422", description = "Validation failed")
     })
     public ResponseEntity<AccountResponse> updateAccount(
@@ -73,12 +78,14 @@ public class AccountController {
     }
     
     @DeleteMapping("/{id}")
+    @PreAuthorize("@accountAccess.hasAccountAccess(#id)")
     @Operation(summary = "Delete account", description = "Deletes the selected account for the authenticated user")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "204", description = "Account deleted successfully"),
         @ApiResponse(responseCode = "400", description = "Cannot delete account with non-zero balance"),
         @ApiResponse(responseCode = "401", description = "User not authenticated"),
-        @ApiResponse(responseCode = "404", description = "Account not found or access denied")
+        @ApiResponse(responseCode = "403", description = "Access denied - not account owner"),
+        @ApiResponse(responseCode = "404", description = "Account not found")
     })
     public ResponseEntity<Void> deleteAccount(
             @PathVariable UUID id,
@@ -89,11 +96,13 @@ public class AccountController {
     }
     
     @GetMapping("/{id}")
+    @PreAuthorize("@accountAccess.hasAccountAccess(#id)")
     @Operation(summary = "Get account details", description = "Retrieves details of a specific account including balance")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "Account details retrieved successfully"),
         @ApiResponse(responseCode = "401", description = "User not authenticated"),
-        @ApiResponse(responseCode = "404", description = "Account not found or access denied")
+        @ApiResponse(responseCode = "403", description = "Access denied - not account owner"),
+        @ApiResponse(responseCode = "404", description = "Account not found")
     })
     public ResponseEntity<AccountResponse> getAccountDetails(
             @PathVariable UUID id,

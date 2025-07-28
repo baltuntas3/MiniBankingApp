@@ -17,6 +17,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
@@ -34,10 +35,13 @@ public class TransferController {
     private final TransferMapper transferMapper;
     
     @PostMapping
+    @PreAuthorize("@accountAccess.hasTransferAccess(#request.fromAccountId)")
     @Operation(summary = "Transfer money between accounts", description = "Transfers money from one account to another")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "Transfer completed successfully"),
         @ApiResponse(responseCode = "400", description = "Invalid transfer request"),
+        @ApiResponse(responseCode = "401", description = "User not authenticated"),
+        @ApiResponse(responseCode = "403", description = "Access denied - not source account owner"),
         @ApiResponse(responseCode = "404", description = "Account not found"),
         @ApiResponse(responseCode = "422", description = "Insufficient funds or validation failed")
     })
@@ -87,12 +91,14 @@ public class TransferController {
     }
     
     @GetMapping("/transactions/account/{accountId}")
+    @PreAuthorize("@accountAccess.hasAccountAccess(#accountId)")
     @Operation(summary = "View transaction history", 
                description = "Retrieves transaction history for a specified account. Access restricted to account owner.")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "Transaction history retrieved successfully"),
         @ApiResponse(responseCode = "401", description = "User not authenticated"),
-        @ApiResponse(responseCode = "404", description = "Account not found or access denied")
+        @ApiResponse(responseCode = "403", description = "Access denied - not account owner"),
+        @ApiResponse(responseCode = "404", description = "Account not found")
     })
     public ResponseEntity<List<TransactionHistoryResponse>> getTransactionHistory(
             @PathVariable UUID accountId,
