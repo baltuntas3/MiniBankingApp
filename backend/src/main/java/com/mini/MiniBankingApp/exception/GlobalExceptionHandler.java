@@ -1,5 +1,6 @@
 package com.mini.MiniBankingApp.exception;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
@@ -15,6 +16,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 @RestControllerAdvice
+@Slf4j
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
@@ -131,6 +133,19 @@ public class GlobalExceptionHandler {
                 .build();
                 
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(errorResponse);
+    }
+
+    @ExceptionHandler(CurrencyMismatchException.class)
+    public ResponseEntity<ErrorResponse> handleCurrencyMismatchException(CurrencyMismatchException ex) {
+        log.error("CurrencyMismatchException occurred: {}", ex.getMessage());
+        ErrorResponse errorResponse = ErrorResponse.builder()
+                .timestamp(LocalDateTime.now())
+                .status(HttpStatus.BAD_REQUEST.value())
+                .error("Currency Mismatch")
+                .message("Farklı para birimlerindeki hesaplar arasında transfer yapılamaz")
+                .build();
+
+        return ResponseEntity.badRequest().body(errorResponse);
     }
 
     @ExceptionHandler(IllegalStateException.class)

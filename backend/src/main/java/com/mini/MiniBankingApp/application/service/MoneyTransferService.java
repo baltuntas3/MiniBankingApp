@@ -1,12 +1,15 @@
 package com.mini.MiniBankingApp.application.service;
 
+import com.mini.MiniBankingApp.application.dto.MoneyTransferResponse;
 import com.mini.MiniBankingApp.application.dto.TransactionHistoryResponse;
 import com.mini.MiniBankingApp.application.mapper.TransactionHistoryMapper;
 import com.mini.MiniBankingApp.domain.account.Account;
 import com.mini.MiniBankingApp.domain.user.User;
 import com.mini.MiniBankingApp.exception.AccountNotFoundException;
 import com.mini.MiniBankingApp.domain.transaction.Transaction;
+import com.mini.MiniBankingApp.domain.transaction.TransactionStatus;
 import com.mini.MiniBankingApp.exception.UserNotFoundException;
+import com.mini.MiniBankingApp.exception.CurrencyMismatchException;
 import com.mini.MiniBankingApp.infrastructure.projection.AccountBalanceProjection;
 import com.mini.MiniBankingApp.infrastructure.repository.AccountRepository;
 import com.mini.MiniBankingApp.infrastructure.repository.TransactionRepository;
@@ -22,7 +25,6 @@ import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
-@Transactional
 @Slf4j
 public class MoneyTransferService {
     
@@ -30,7 +32,9 @@ public class MoneyTransferService {
     private final TransactionRepository transactionRepository;
     private final UserRepository userRepository;
     private final TransactionHistoryMapper transactionHistoryMapper;
+    private final TransactionLogService transactionLogService;
     
+    @Transactional
     public Transaction transfer(String username, UUID fromAccountId, UUID toAccountId, BigDecimal amount) {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new UserNotFoundException("User not found"));
@@ -51,6 +55,12 @@ public class MoneyTransferService {
             .orElseThrow(() -> new AccountNotFoundException("Target account not found: " + toAccountId));
         
         try {
+            // Check if both accounts have the same currency type
+            if (!fromAccount.getClass().equals(toAccount.getClass())) {
+                throw new CurrencyMismatchException("Cannot transfer between different currency types. Source: " + 
+                    fromAccount.getClass().getSimpleName() + ", Target: " + toAccount.getClass().getSimpleName());
+            }
+            
             fromAccount.withdraw(amount);
             toAccount.deposit(amount);
             
@@ -66,11 +76,9 @@ public class MoneyTransferService {
             return savedTransaction;
             
         } catch (Exception e) {
-            Transaction failedTransaction = new Transaction(fromAccountId, toAccountId, amount);
-            failedTransaction.markAsFailed("Failed Transfer: " + e.getMessage());
-            transactionRepository.save(failedTransaction);
-            
-            log.warn("Money transfer failed. From: {}, To: {}, Amount: {}, Error: {}", 
+            transactionLogService.logFailedTransaction(fromAccountId, toAccountId, amount, e.getMessage());
+
+            log.warn("Money transfer failed. From: {}, To: {}, Amount: {}, Error: {}",
                     fromAccountId, toAccountId, amount, e.getMessage());
             
             throw e;
@@ -105,7 +113,7 @@ public class MoneyTransferService {
                 .orElseThrow(() -> new AccountNotFoundException("Account not found or access denied"));
         
         List<Transaction> transactions = transactionRepository.findByAccountIdOrderByCreatedAtDesc(accountId);
-        
+
         return transactions.stream()
                 .map(transaction -> transactionHistoryMapper.toHistoryResponse(transaction, accountId))
                 .toList();

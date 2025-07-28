@@ -26,10 +26,19 @@ spring:
 
 # JWT Configuration
 jwt:
-  secret: mySecretKeyForJWTTokenGenerationAndValidation123456789
+  secret: mySecretKeyForJWTTokenGenerationAndValidation1234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789
   expiration: PT24H # 24 hours
   refresh:
     expiration: P7D # 7 days
+
+# Logging Configuration
+logging:
+  level:
+    web: DEBUG
+    org.springframework.web: DEBUG
+    com.mini.MiniBankingApp: DEBUG
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
 
 # Swagger Configuration
 springdoc:

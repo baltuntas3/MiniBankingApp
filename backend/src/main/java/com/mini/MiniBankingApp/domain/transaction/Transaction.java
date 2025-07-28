@@ -44,7 +44,19 @@ public class Transaction extends LongBaseEntity {
         this.amount = amount;
         this.status = TransactionStatus.SUCCESS;
     }
-    
+
+    private Transaction(UUID fromAccountId, UUID toAccountId, BigDecimal amount, TransactionStatus status) {
+        super();
+        this.fromAccountId = fromAccountId;
+        this.toAccountId = toAccountId;
+        this.amount = amount;
+        this.status = status;
+    }
+
+    public static Transaction createFailedTransaction(UUID fromAccountId, UUID toAccountId, BigDecimal amount) {
+        return new Transaction(fromAccountId, toAccountId, amount, TransactionStatus.FAILED);
+    }
+
     public void markAsFailed(String reason) {
         this.status = TransactionStatus.FAILED;
     }
