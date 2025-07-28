@@ -49,26 +49,16 @@ public class TransferController {
             @Valid @RequestBody MoneyTransferRequest request,
             Authentication authentication) {
         String username = authentication.getName();
-        try {
-            Transaction transaction = moneyTransferService.transfer(
-                username,
-                request.getFromAccountId(),
-                request.getToAccountId(),
-                request.getAmount()
-            );
-            
-            MoneyTransferResponse response = transferMapper.toResponse(transaction);
-            return ResponseEntity.ok(response);
-            
-        } catch (AccountNotFoundException e) {
-            return ResponseEntity.notFound().build();
-        } catch (InsufficientFundsException e) {
-            return ResponseEntity.unprocessableEntity().build();
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().build();
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-        }
+        
+        Transaction transaction = moneyTransferService.transfer(
+            username,
+            request.getFromAccountId(),
+            request.getToAccountId(),
+            request.getAmount()
+        );
+        
+        MoneyTransferResponse response = transferMapper.toResponse(transaction);
+        return ResponseEntity.ok(response);
     }
     
     @GetMapping("/accounts/{accountId}/balance")
