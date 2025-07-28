@@ -1,27 +1,39 @@
 package com.mini.MiniBankingApp.application.service;
 
+import com.mini.MiniBankingApp.application.dto.TransactionHistoryResponse;
+import com.mini.MiniBankingApp.application.mapper.TransactionHistoryMapper;
 import com.mini.MiniBankingApp.domain.account.Account;
+import com.mini.MiniBankingApp.domain.user.User;
 import com.mini.MiniBankingApp.exception.AccountNotFoundException;
 import com.mini.MiniBankingApp.domain.transaction.Transaction;
+import com.mini.MiniBankingApp.exception.UserNotFoundException;
 import com.mini.MiniBankingApp.infrastructure.projection.AccountBalanceProjection;
 import com.mini.MiniBankingApp.infrastructure.repository.AccountRepository;
 import com.mini.MiniBankingApp.infrastructure.repository.TransactionRepository;
+import com.mini.MiniBankingApp.infrastructure.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
 @Transactional
+@Slf4j
 public class MoneyTransferService {
     
     private final AccountRepository accountRepository;
     private final TransactionRepository transactionRepository;
+    private final UserRepository userRepository;
+    private final TransactionHistoryMapper transactionHistoryMapper;
     
-    public Transaction transfer(UUID fromAccountId, UUID toAccountId, BigDecimal amount) {
+    public Transaction transfer(String username, UUID fromAccountId, UUID toAccountId, BigDecimal amount) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new UserNotFoundException("User not found"));
         
         if (fromAccountId.equals(toAccountId)) {
             throw new IllegalArgumentException("Cannot transfer to the same account");
@@ -31,8 +43,9 @@ public class MoneyTransferService {
             throw new IllegalArgumentException("Transfer amount must be positive");
         }
         
-        Account fromAccount = accountRepository.findById(fromAccountId)
-            .orElseThrow(() -> new AccountNotFoundException("Source account not found: " + fromAccountId));
+        // Verify user owns the source account
+        Account fromAccount = accountRepository.findByIdAndUserId(fromAccountId, user.getId())
+            .orElseThrow(() -> new AccountNotFoundException("Source account not found or access denied"));
             
         Account toAccount = accountRepository.findById(toAccountId)
             .orElseThrow(() -> new AccountNotFoundException("Target account not found: " + toAccountId));
@@ -45,13 +58,20 @@ public class MoneyTransferService {
             accountRepository.save(toAccount);
             
             Transaction transaction = new Transaction(fromAccountId, toAccountId, amount);
+            Transaction savedTransaction = transactionRepository.save(transaction);
             
-            return transactionRepository.save(transaction);
+            log.info("Money transfer completed successfully. Transaction ID: {}, From: {}, To: {}, Amount: {}", 
+                    savedTransaction.getId(), fromAccountId, toAccountId, amount);
+            
+            return savedTransaction;
             
         } catch (Exception e) {
             Transaction failedTransaction = new Transaction(fromAccountId, toAccountId, amount);
             failedTransaction.markAsFailed("Failed Transfer: " + e.getMessage());
             transactionRepository.save(failedTransaction);
+            
+            log.warn("Money transfer failed. From: {}, To: {}, Amount: {}, Error: {}", 
+                    fromAccountId, toAccountId, amount, e.getMessage());
             
             throw e;
         }
@@ -67,5 +87,27 @@ public class MoneyTransferService {
         return accountRepository.findProjectedById(accountId)
             .map(AccountBalanceProjection::getBalance)
             .orElseThrow(() -> new AccountNotFoundException("Account not found: " + accountId));
+    }
+    
+    /**
+     * Gets transaction history for a specific account
+     * @param username authenticated user
+     * @param accountId account ID
+     * @return list of transactions
+     */
+    @Transactional(readOnly = true)
+    public List<TransactionHistoryResponse> getTransactionHistory(String username, UUID accountId) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new UserNotFoundException("User not found"));
+        
+        // Verify account ownership
+        accountRepository.findByIdAndUserId(accountId, user.getId())
+                .orElseThrow(() -> new AccountNotFoundException("Account not found or access denied"));
+        
+        List<Transaction> transactions = transactionRepository.findByAccountIdOrderByCreatedAtDesc(accountId);
+        
+        return transactions.stream()
+                .map(transaction -> transactionHistoryMapper.toHistoryResponse(transaction, accountId))
+                .toList();
     }
 }

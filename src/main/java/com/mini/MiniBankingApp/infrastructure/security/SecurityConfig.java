@@ -41,6 +41,8 @@ public class SecurityConfig {
                 .requestMatchers("/api/users/register", "/api/users/login", "/api/users/refresh", "/api/users/logout").permitAll()
                 .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()
                 .requestMatchers("/h2-console/**").permitAll()
+                .requestMatchers("/api/accounts/**").authenticated()
+                .requestMatchers("/api/transactions/**").authenticated()
                 .anyRequest().authenticated()
             )
             .exceptionHandling(ex -> ex.authenticationEntryPoint(jwtAuthenticationEntryPoint))

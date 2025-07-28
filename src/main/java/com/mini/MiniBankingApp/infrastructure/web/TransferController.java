@@ -3,6 +3,7 @@ package com.mini.MiniBankingApp.infrastructure.web;
 import com.mini.MiniBankingApp.application.dto.AccountBalanceResponse;
 import com.mini.MiniBankingApp.application.dto.MoneyTransferRequest;
 import com.mini.MiniBankingApp.application.dto.MoneyTransferResponse;
+import com.mini.MiniBankingApp.application.dto.TransactionHistoryResponse;
 import com.mini.MiniBankingApp.application.mapper.TransferMapper;
 import com.mini.MiniBankingApp.application.service.MoneyTransferService;
 import com.mini.MiniBankingApp.exception.AccountNotFoundException;
@@ -16,9 +17,11 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -38,9 +41,13 @@ public class TransferController {
         @ApiResponse(responseCode = "404", description = "Account not found"),
         @ApiResponse(responseCode = "422", description = "Insufficient funds or validation failed")
     })
-    public ResponseEntity<MoneyTransferResponse> transferMoney(@Valid @RequestBody MoneyTransferRequest request) {
+    public ResponseEntity<MoneyTransferResponse> transferMoney(
+            @Valid @RequestBody MoneyTransferRequest request,
+            Authentication authentication) {
+        String username = authentication.getName();
         try {
             Transaction transaction = moneyTransferService.transfer(
+                username,
                 request.getFromAccountId(),
                 request.getToAccountId(),
                 request.getAmount()
@@ -77,5 +84,21 @@ public class TransferController {
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
+    }
+    
+    @GetMapping("/transactions/account/{accountId}")
+    @Operation(summary = "View transaction history", 
+               description = "Retrieves transaction history for a specified account. Access restricted to account owner.")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Transaction history retrieved successfully"),
+        @ApiResponse(responseCode = "401", description = "User not authenticated"),
+        @ApiResponse(responseCode = "404", description = "Account not found or access denied")
+    })
+    public ResponseEntity<List<TransactionHistoryResponse>> getTransactionHistory(
+            @PathVariable UUID accountId,
+            Authentication authentication) {
+        String username = authentication.getName();
+        List<TransactionHistoryResponse> history = moneyTransferService.getTransactionHistory(username, accountId);
+        return ResponseEntity.ok(history);
     }
 }

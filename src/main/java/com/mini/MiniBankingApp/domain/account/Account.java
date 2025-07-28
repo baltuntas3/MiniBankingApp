@@ -6,6 +6,9 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import org.hibernate.annotations.OptimisticLockType;
+import org.hibernate.annotations.OptimisticLocking;
+
 import java.math.BigDecimal;
 import java.util.UUID;
 
@@ -13,6 +16,7 @@ import java.util.UUID;
 @Table(name = "accounts")
 @Inheritance(strategy = InheritanceType.SINGLE_TABLE)
 @DiscriminatorColumn(name = "account_type", discriminatorType = DiscriminatorType.STRING)
+@OptimisticLocking(type = OptimisticLockType.VERSION)
 @Getter
 @NoArgsConstructor
 public abstract class Account extends BaseEntity {
@@ -28,6 +32,10 @@ public abstract class Account extends BaseEntity {
     
     @Column(name = "balance", precision = 19, scale = 2, nullable = false)
     private BigDecimal balance;
+    
+    @Version
+    @Column(name = "version")
+    private Long version;
     
     public Account(UUID userId, String number, String name, BigDecimal initialBalance) {
         super();
