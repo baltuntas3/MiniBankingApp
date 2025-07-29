@@ -5,10 +5,19 @@ import { useAccounts } from '../hooks/useAccounts';
 
 const TransactionHistory = () => {
   const [searchParams, setSearchParams] = useSearchParams();
-  const { getTransactionHistory, loading, error } = useTransfers();
+  const { getTransactionHistory, getTransactionHistoryPaginated, loading, error } = useTransfers();
   const { accounts, fetchAccounts } = useAccounts();
 
   const [transactions, setTransactions] = useState([]);
+  const [paginationData, setPaginationData] = useState({
+    currentPage: 0,
+    totalPages: 0,
+    totalElements: 0,
+    pageSize: 10,
+    hasNext: false,
+    hasPrevious: false
+  });
+  const [usePagination, setUsePagination] = useState(true);
   const [filters, setFilters] = useState({
     accountId: searchParams.get('account') || '',
     startDate: searchParams.get('startDate') || '',
@@ -17,6 +26,43 @@ const TransactionHistory = () => {
     minAmount: searchParams.get('minAmount') || '',
     maxAmount: searchParams.get('maxAmount') || ''
   });
+
+  const loadTransactions = useCallback(async (page = 0) => {
+    if (!filters.accountId) {
+      console.log('No accountId found in filters:', filters);
+      return;
+    }
+
+    console.log('Loading transactions for accountId:', filters.accountId);
+    
+    if (usePagination) {
+      const data = await getTransactionHistoryPaginated(filters.accountId, page, paginationData.pageSize);
+      if (data) {
+        console.log('Paginated transaction data received:', data);
+        setTransactions(data.transactions);
+        setPaginationData({
+          currentPage: data.currentPage,
+          totalPages: data.totalPages,
+          totalElements: data.totalElements,
+          pageSize: data.pageSize,
+          hasNext: data.hasNext,
+          hasPrevious: data.hasPrevious
+        });
+      }
+    } else {
+      const data = await getTransactionHistory(filters.accountId);
+      console.log('Transaction data received:', data);
+      setTransactions(data);
+      setPaginationData({
+        currentPage: 0,
+        totalPages: 1,
+        totalElements: data.length,
+        pageSize: data.length,
+        hasNext: false,
+        hasPrevious: false
+      });
+    }
+  }, [filters.accountId, usePagination, paginationData.pageSize, getTransactionHistory, getTransactionHistoryPaginated]);
 
   useEffect(() => {
     fetchAccounts();
@@ -27,20 +73,6 @@ const TransactionHistory = () => {
       loadTransactions();
     }
   }, [filters.accountId, loadTransactions]);
-
-  const loadTransactions = useCallback(async () => {
-    if (!filters.accountId) return;
-
-    const queryParams = {};
-    if (filters.startDate) queryParams.startDate = filters.startDate;
-    if (filters.endDate) queryParams.endDate = filters.endDate;
-    if (filters.type) queryParams.type = filters.type;
-    if (filters.minAmount) queryParams.minAmount = filters.minAmount;
-    if (filters.maxAmount) queryParams.maxAmount = filters.maxAmount;
-
-    const data = await getTransactionHistory(filters.accountId);
-    setTransactions(data);
-  }, [filters.accountId, filters.startDate, filters.endDate, filters.type, filters.minAmount, filters.maxAmount, getTransactionHistory]);
 
   const handleFilterChange = (e) => {
     const { name, value } = e.target;
@@ -55,7 +87,7 @@ const TransactionHistory = () => {
   };
 
   const handleApplyFilters = () => {
-    loadTransactions();
+    loadTransactions(0);
   };
 
   const clearFilters = () => {
@@ -69,7 +101,23 @@ const TransactionHistory = () => {
     };
     setFilters(clearedFilters);
     setSearchParams({ account: filters.accountId });
-    loadTransactions();
+    loadTransactions(0);
+  };
+
+  const handlePageChange = (newPage) => {
+    if (newPage >= 0 && newPage < paginationData.totalPages) {
+      loadTransactions(newPage);
+    }
+  };
+
+  const handlePageSizeChange = (newSize) => {
+    setPaginationData(prev => ({ ...prev, pageSize: newSize }));
+    loadTransactions(0);
+  };
+
+  const togglePagination = () => {
+    setUsePagination(!usePagination);
+    loadTransactions(0);
   };
 
   const formatDate = (dateString) => {
@@ -187,6 +235,9 @@ const TransactionHistory = () => {
           <button onClick={clearFilters} className="clear-btn">
             Clear Filters
           </button>
+          <button onClick={togglePagination} className="toggle-pagination-btn">
+            {usePagination ? 'Disable Pagination' : 'Enable Pagination'}
+          </button>
         </div>
       </div>
 
@@ -206,7 +257,26 @@ const TransactionHistory = () => {
         </div>
       ) : (
         <div className="transactions-section">
-          <h3>Transactions ({transactions.length})</h3>
+          <div className="transactions-header">
+            <h3>Transactions ({usePagination ? paginationData.totalElements : transactions.length})</h3>
+            {usePagination && (
+              <div className="pagination-controls">
+                <div className="page-size-selector">
+                  <label>Items per page: </label>
+                  <select 
+                    value={paginationData.pageSize} 
+                    onChange={(e) => handlePageSizeChange(parseInt(e.target.value))}
+                  >
+                    <option value={5}>5</option>
+                    <option value={10}>10</option>
+                    <option value={20}>20</option>
+                    <option value={50}>50</option>
+                  </select>
+                </div>
+              </div>
+            )}
+          </div>
+          
           <div className="transactions-table">
             <div className="table-header">
               <div className="col-date">Date</div>
@@ -247,6 +317,33 @@ const TransactionHistory = () => {
               </div>
             ))}
           </div>
+
+          {usePagination && paginationData.totalPages > 1 && (
+            <div className="pagination">
+              <button 
+                onClick={() => handlePageChange(paginationData.currentPage - 1)}
+                disabled={!paginationData.hasPrevious}
+                className="pagination-btn"
+              >
+                Previous
+              </button>
+              
+              <div className="pagination-info">
+                Page {paginationData.currentPage + 1} of {paginationData.totalPages}
+                <span className="total-items">
+                  ({paginationData.totalElements} total items)
+                </span>
+              </div>
+              
+              <button 
+                onClick={() => handlePageChange(paginationData.currentPage + 1)}
+                disabled={!paginationData.hasNext}
+                className="pagination-btn"
+              >
+                Next
+              </button>
+            </div>
+          )}
         </div>
       )}
     </div>

@@ -100,7 +100,7 @@ const AccountsList = () => {
                   Transfer
                 </Link>
                 <Link 
-                  to={`/transaction-history?account=${account.id}`} 
+                  to={`/transactions?account=${account.id}`} 
                   className="history-btn"
                 >
                   View Full History

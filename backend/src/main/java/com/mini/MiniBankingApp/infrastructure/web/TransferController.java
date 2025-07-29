@@ -4,6 +4,7 @@ import com.mini.MiniBankingApp.application.dto.AccountBalanceResponse;
 import com.mini.MiniBankingApp.application.dto.MoneyTransferRequest;
 import com.mini.MiniBankingApp.application.dto.MoneyTransferResponse;
 import com.mini.MiniBankingApp.application.dto.TransactionHistoryResponse;
+import com.mini.MiniBankingApp.application.dto.TransactionHistoryPageResponse;
 import com.mini.MiniBankingApp.application.mapper.TransferMapper;
 import com.mini.MiniBankingApp.application.service.MoneyTransferService;
 import com.mini.MiniBankingApp.exception.AccountNotFoundException;
@@ -95,6 +96,26 @@ public class TransferController {
             Authentication authentication) {
         String username = authentication.getName();
         List<TransactionHistoryResponse> history = moneyTransferService.getTransactionHistory(username, accountId);
+        return ResponseEntity.ok(history);
+    }
+    
+    @GetMapping("/transactions/account/{accountId}/paginated")
+    @PreAuthorize("@accountAccess.hasAccountAccess(#accountId)")
+    @Operation(summary = "View paginated transaction history", 
+               description = "Retrieves paginated transaction history for a specified account. Access restricted to account owner.")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Transaction history retrieved successfully"),
+        @ApiResponse(responseCode = "401", description = "User not authenticated"),
+        @ApiResponse(responseCode = "403", description = "Access denied - not account owner"),
+        @ApiResponse(responseCode = "404", description = "Account not found")
+    })
+    public ResponseEntity<TransactionHistoryPageResponse> getTransactionHistoryPaginated(
+            @PathVariable UUID accountId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            Authentication authentication) {
+        String username = authentication.getName();
+        TransactionHistoryPageResponse history = moneyTransferService.getTransactionHistoryPaginated(username, accountId, page, size);
         return ResponseEntity.ok(history);
     }
 }

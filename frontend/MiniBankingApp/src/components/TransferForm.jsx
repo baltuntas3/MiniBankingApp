@@ -43,11 +43,7 @@ const TransferForm = () => {
     }
     
     if (!formData.toAccountId) {
-      errors.toAccountId = 'Destination account is required';
-    }
-    
-    if (formData.fromAccountId === formData.toAccountId) {
-      errors.toAccountId = 'Source and destination accounts cannot be the same';
+      errors.toAccountId = 'Destination account ID is required';
     }
     
     if (!formData.amount) {
@@ -76,8 +72,7 @@ const TransferForm = () => {
     const transferData = {
       fromAccountId: formData.fromAccountId,
       toAccountId: formData.toAccountId,
-      amount: parseFloat(formData.amount),
-      description: formData.description || 'Money transfer'
+      amount: parseFloat(formData.amount)
     };
     
     const success = await createTransfer(transferData);
@@ -137,23 +132,16 @@ const TransferForm = () => {
         </div>
         
         <div className="form-group">
-          <label htmlFor="toAccountId">To Account:</label>
-          <select
+          <label htmlFor="toAccountId">To Account ID:</label>
+          <input
+            type="text"
             id="toAccountId"
             name="toAccountId"
             value={formData.toAccountId}
             onChange={handleChange}
+            placeholder="Enter destination account ID"
             required
-          >
-            <option value="">Select destination account</option>
-            {accounts
-              .filter(account => account.id !== formData.fromAccountId)
-              .map(account => (
-                <option key={account.id} value={account.id}>
-                  {account.accountName} - {account.accountNumber}
-                </option>
-              ))}
-          </select>
+          />
           {validationErrors.toAccountId && (
             <div className="error-message">{validationErrors.toAccountId}</div>
           )}

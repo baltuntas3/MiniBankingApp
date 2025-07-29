@@ -2,6 +2,7 @@ package com.mini.MiniBankingApp.application.service;
 
 import com.mini.MiniBankingApp.application.dto.MoneyTransferResponse;
 import com.mini.MiniBankingApp.application.dto.TransactionHistoryResponse;
+import com.mini.MiniBankingApp.application.dto.TransactionHistoryPageResponse;
 import com.mini.MiniBankingApp.application.mapper.TransactionHistoryMapper;
 import com.mini.MiniBankingApp.domain.account.Account;
 import com.mini.MiniBankingApp.domain.user.User;
@@ -16,6 +17,9 @@ import com.mini.MiniBankingApp.infrastructure.repository.TransactionRepository;
 import com.mini.MiniBankingApp.infrastructure.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -117,5 +121,40 @@ public class MoneyTransferService {
         return transactions.stream()
                 .map(transaction -> transactionHistoryMapper.toHistoryResponse(transaction, accountId))
                 .toList();
+    }
+    
+    /**
+     * Gets paginated transaction history for a specific account
+     * @param username authenticated user
+     * @param accountId account ID
+     * @param page page number (0-based)
+     * @param size page size
+     * @return paginated transaction history
+     */
+    @Transactional(readOnly = true)
+    public TransactionHistoryPageResponse getTransactionHistoryPaginated(String username, UUID accountId, int page, int size) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new UserNotFoundException("User not found"));
+        
+        // Verify account ownership
+        accountRepository.findByIdAndUserId(accountId, user.getId())
+                .orElseThrow(() -> new AccountNotFoundException("Account not found or access denied"));
+        
+        Pageable pageable = PageRequest.of(page, size);
+        Page<Transaction> transactionPage = transactionRepository.findByAccountIdOrderByCreatedAtDesc(accountId, pageable);
+        
+        List<TransactionHistoryResponse> transactions = transactionPage.getContent().stream()
+                .map(transaction -> transactionHistoryMapper.toHistoryResponse(transaction, accountId))
+                .toList();
+        
+        return new TransactionHistoryPageResponse(
+                transactions,
+                transactionPage.getNumber(),
+                transactionPage.getTotalPages(),
+                transactionPage.getTotalElements(),
+                transactionPage.getSize(),
+                transactionPage.hasNext(),
+                transactionPage.hasPrevious()
+        );
     }
 }
