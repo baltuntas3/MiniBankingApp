@@ -43,8 +43,8 @@ const AccountsList = () => {
             Create New Account
           </Link>
         </div>
-      
-      <div className="search-section">
+        
+        <div className="search-section">
         <input
           type="text"
           placeholder="Search by account number..."
@@ -116,6 +116,7 @@ const AccountsList = () => {
             ))}
           </div>
         )}
+        </div>
       </div>
     </Layout>
   );

@@ -1,0 +1,32 @@
+spring:
+  # Docker environment PostgreSQL configuration
+  datasource:
+    url: jdbc:postgresql://database:5432/minibanking
+    username: minibanking
+    password: minibanking123
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 20
+      minimum-idle: 5
+
+  # JPA/Hibernate Configuration for Docker
+  jpa:
+    database: postgresql
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        default_schema: minibanking_schema
+
+# Logging for Docker environment
+logging:
+  level:
+    web: INFO
+    org.springframework.web: INFO
+    com.mini.MiniBankingApp: INFO
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
