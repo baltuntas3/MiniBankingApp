@@ -23,6 +23,7 @@ spring:
       hibernate:
         format_sql: true
         dialect: org.hibernate.dialect.PostgreSQLDialect
+        default_schema: minibanking_schema
 
 # JWT Configuration
 jwt:

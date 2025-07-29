@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useAccounts } from '../hooks/useAccounts';
 import { useDebounce } from '../hooks/useDebounce';
 import { Link } from 'react-router-dom';
-import ThemeToggle from '../components/ThemeToggle';
+import Layout from '../components/Layout';
 
 const AccountsList = () => {
   const { accounts, fetchAccounts, loading, error, searchAccounts } = useAccounts();
@@ -36,16 +36,13 @@ const AccountsList = () => {
   if (error) return <div className="error">Error: {error}</div>;
 
   return (
-    <div className="accounts-list">
-      <div className="accounts-header">
-        <h1>Your Accounts</h1>
-        <div className="header-actions">
-          <ThemeToggle />
+    <Layout title="Your Accounts" showBackButton={true}>
+      <div className="accounts-list">
+        <div className="accounts-header">
           <Link to="/accounts/create" className="btn btn-success">
             Create New Account
           </Link>
         </div>
-      </div>
       
       <div className="search-section">
         <input
@@ -120,11 +117,7 @@ const AccountsList = () => {
           </div>
         )}
       </div>
-      
-      <div className="navigation">
-        <Link to="/dashboard" className="back-btn">Back to Dashboard</Link>
-      </div>
-    </div>
+    </Layout>
   );
 };
 

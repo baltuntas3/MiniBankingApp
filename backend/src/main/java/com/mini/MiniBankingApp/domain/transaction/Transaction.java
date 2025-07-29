@@ -9,7 +9,7 @@ import java.math.BigDecimal;
 import java.util.UUID;
 
 @Entity
-@Table(name = "transactions")
+@Table(name = "transactions", schema = "minibanking_schema")
 @Getter
 @NoArgsConstructor
 public class Transaction extends LongBaseEntity {
