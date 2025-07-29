@@ -13,17 +13,20 @@ const AccountsList = () => {
   }, []);
 
   useEffect(() => {
+    console.log('Debounced filters changed:', debouncedFilters);
     const hasFilters = debouncedFilters.number.trim() || debouncedFilters.name.trim();
     
     if (hasFilters) {
       const filters = {};
       if (debouncedFilters.number.trim()) filters.number = debouncedFilters.number.trim();
       if (debouncedFilters.name.trim()) filters.name = debouncedFilters.name.trim();
+      console.log('Calling searchAccounts with filters:', filters);
       searchAccounts(filters);
     } else {
+      console.log('No filters, calling fetchAccounts');
       fetchAccounts();
     }
-  }, [debouncedFilters]);
+  }, [debouncedFilters, searchAccounts, fetchAccounts]);
 
   const handleFilterChange = (field, value) => {
     setSearchFilters(prev => ({ ...prev, [field]: value }));

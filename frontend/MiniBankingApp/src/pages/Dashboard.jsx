@@ -18,7 +18,7 @@ const Dashboard = () => {
   return (
     <div className="dashboard">
       <header className="dashboard-header">
-        <h1>Welcome, {user?.firstName} {user?.lastName}</h1>
+        <h1>Welcome, {user?.username}</h1>
         <button onClick={handleLogout} className="btn btn-danger">
           Logout
         </button>

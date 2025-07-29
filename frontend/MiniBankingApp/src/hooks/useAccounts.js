@@ -23,7 +23,7 @@ export const useAccounts = () => {
 
     setAccounts(data || []);
     setLoading(false);
-  }, []);
+  }, [setLoading, setError, setAccounts]);
 
   const createAccount = async (accountData) => {
     setLoading(true);
@@ -57,7 +57,7 @@ export const useAccounts = () => {
     setSelectedAccount(data);
     setLoading(false);
     return data;
-  }, []);
+  }, [setLoading, setError, setSelectedAccount]);
 
   const updateAccount = async (accountId, accountData) => {
     setLoading(true);
@@ -99,7 +99,8 @@ export const useAccounts = () => {
     return true;
   };
 
-  const searchAccounts = async (filters = {}) => {
+  const searchAccounts = useCallback(async (filters = {}) => {
+    console.log('searchAccounts called with filters:', filters);
     setLoading(true);
     setError(null);
 
@@ -107,18 +108,22 @@ export const useAccounts = () => {
     if (filters.number) searchRequest.number = filters.number;
     if (filters.name) searchRequest.name = filters.name;
 
+    console.log('Search request payload:', searchRequest);
+
     const [data, err] = await handlePostRequest('/api/accounts/search', searchRequest);
 
     if (err) {
+      console.log('Search error:', err);
       setError(err.message || 'Failed to search accounts');
       setLoading(false);
       return [];
     }
 
+    console.log('Search results:', data);
     setAccounts(data || []);
     setLoading(false);
     return data || [];
-  };
+  }, [setLoading, setError, setAccounts]);
 
   return {
     accounts,

@@ -16,7 +16,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 import './App.css';
 
 function AppContent() {
-  const { checkAuthStatus } = useAuth();
+  const { checkAuthStatus, authInitialized } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -24,6 +24,11 @@ function AppContent() {
     setNavigateFunction(navigate);
     checkAuthStatus();
   }, [navigate, checkAuthStatus]);
+
+  // Show loading while initializing authentication
+  if (!authInitialized) {
+    return <div className="loading">Loading...</div>;
+  }
 
   return (
     <div className="app">

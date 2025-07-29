@@ -1,12 +1,13 @@
 import { useAtom } from 'jotai';
 import { useCallback } from 'react';
-import { userAtom, isAuthenticatedAtom, loadingAtom, errorAtom } from '../store/atoms';
+import { userAtom, isAuthenticatedAtom, authInitializedAtom, loadingAtom, errorAtom } from '../store/atoms';
 import { handlePostRequest } from '../api/axiosConfig';
 import { setCookie, getCookie, deleteCookie } from '../utils/cookieUtils';
 
 export const useAuth = () => {
   const [user, setUser] = useAtom(userAtom);
   const [isAuthenticated] = useAtom(isAuthenticatedAtom);
+  const [authInitialized, setAuthInitialized] = useAtom(authInitializedAtom);
   const [loading, setLoading] = useAtom(loadingAtom);
   const [error, setError] = useAtom(errorAtom);
 
@@ -86,19 +87,24 @@ export const useAuth = () => {
 
   const checkAuthStatus = useCallback(async () => {
     const storedUser = getCookie('user');
-    if (storedUser) {
+    const storedToken = getCookie('authToken');
+    
+    if (storedUser && storedToken) {
       try {
         const parsedUser = JSON.parse(storedUser);
         setUser(parsedUser);
       } catch {
         deleteCookie('user');
+        deleteCookie('authToken');
       }
     }
-  }, [setUser]);
+    setAuthInitialized(true);
+  }, [setUser, setAuthInitialized]);
 
   return {
     user,
     isAuthenticated,
+    authInitialized,
     loading,
     error,
     login,

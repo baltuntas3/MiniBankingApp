@@ -7,6 +7,8 @@ export const isAuthenticatedAtom = atom((get) => {
   return user !== null;
 });
 
+export const authInitializedAtom = atom(false);
+
 export const accountsAtom = atom([]);
 
 export const selectedAccountAtom = atom(null);
