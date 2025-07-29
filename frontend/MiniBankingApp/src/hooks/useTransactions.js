@@ -61,12 +61,30 @@ export const useTransactions = () => {
         return data || [];
     };
 
+    const getTransactionHistoryPaginated = useCallback(async (accountId, page = 0, size = 5) => {
+        setLoading(true);
+        setError(null);
+
+        const url = `/api/transfers/transactions/account/${accountId}/paginated?page=${page}&size=${size}`;
+        const [data, err] = await handleGetRequest(url);
+
+        if (err) {
+            setError(err.message || 'Failed to fetch transaction history');
+            setLoading(false);
+            return null;
+        }
+
+        setLoading(false);
+        return data;
+    }, []);
+
     return {
         transactions,
         loading,
         error,
         fetchTransactions,
         createTransfer,
-        getTransactionHistory
+        getTransactionHistory,
+        getTransactionHistoryPaginated
     };
 };

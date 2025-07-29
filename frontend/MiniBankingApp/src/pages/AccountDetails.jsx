@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useAccounts } from '../hooks/useAccounts';
 import { useTransactions } from '../hooks/useTransactions';
@@ -6,14 +6,22 @@ import { useTransactions } from '../hooks/useTransactions';
 const AccountDetails = () => {
   const { id } = useParams();
   const { selectedAccount, getAccountDetails, loading: accountLoading, error: accountError } = useAccounts();
-  const { transactions, fetchTransactions, loading: transactionsLoading } = useTransactions();
+  const { getTransactionHistoryPaginated, loading: transactionsLoading } = useTransactions();
+  const [recentTransactions, setRecentTransactions] = useState([]);
 
   useEffect(() => {
     if (id) {
       getAccountDetails(id);
-      fetchTransactions(id);
+      loadRecentTransactions(id);
     }
   }, [id]); // Remove function dependencies to prevent infinite loop
+
+  const loadRecentTransactions = async (accountId) => {
+    const data = await getTransactionHistoryPaginated(accountId, 0, 5);
+    if (data && data.transactions) {
+      setRecentTransactions(data.transactions);
+    }
+  };
 
   if (accountLoading) return <div className="loading">Loading account details...</div>;
   if (accountError) return <div className="error">Error: {accountError}</div>;
@@ -78,9 +86,9 @@ const AccountDetails = () => {
         <h3>Recent Transactions</h3>
         {transactionsLoading ? (
           <p>Loading transactions...</p>
-        ) : transactions.length > 0 ? (
+        ) : recentTransactions.length > 0 ? (
           <div className="transactions-list">
-            {transactions.slice(0, 5).map(transaction => (
+            {recentTransactions.map(transaction => (
               <div key={transaction.id} className="transaction-item">
                 <div className="transaction-info">
                   <span className="transaction-type">{transaction.type}</span>
@@ -93,14 +101,14 @@ const AccountDetails = () => {
                     <p className="description">{transaction.description}</p>
                   )}
                   {transaction.fromAccount && (
-                    <p className="from">From: {transaction.fromAccount}</p>
+                    <p className="from">From: {transaction.fromAccountNumber}</p>
                   )}
                   {transaction.toAccount && (
-                    <p className="to">To: {transaction.toAccount}</p>
+                    <p className="to">To: {transaction.toAccountNumber}</p>
                   )}
                 </div>
                 <div className={`transaction-amount ${transaction.amount < 0 ? 'debit' : 'credit'}`}>
-                  {transaction.amount > 0 ? '+' : ''}{selectedAccount.currency} {transaction.amount?.toFixed(2)}
+                  {transaction.amount > 0 ? '+' : ''}{selectedAccount.currency} {Math.abs(transaction.amount)?.toFixed(2)}
                 </div>
               </div>
             ))}
