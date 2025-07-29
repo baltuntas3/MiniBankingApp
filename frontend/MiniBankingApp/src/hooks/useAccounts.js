@@ -59,11 +59,54 @@ export const useAccounts = () => {
     return data;
   }, []);
 
-  const searchAccounts = async (query) => {
+  const updateAccount = async (accountId, accountData) => {
+    setLoading(true);
+    setError(null);
+    
+    const [data, err] = await handlePutRequest(`/api/accounts/${accountId}`, accountData);
+    
+    if (err) {
+      setError(err.message || 'Failed to update account');
+      setLoading(false);
+      return false;
+    }
+    
+    setAccounts(prev => prev.map(acc => acc.id === accountId ? data : acc));
+    if (selectedAccount?.id === accountId) {
+      setSelectedAccount(data);
+    }
+    setLoading(false);
+    return true;
+  };
+
+  const deleteAccount = async (accountId) => {
+    setLoading(true);
+    setError(null);
+    
+    const [, err] = await handleDeleteRequest(`/api/accounts/${accountId}`);
+    
+    if (err) {
+      setError(err.message || 'Failed to delete account');
+      setLoading(false);
+      return false;
+    }
+    
+    setAccounts(prev => prev.filter(acc => acc.id !== accountId));
+    if (selectedAccount?.id === accountId) {
+      setSelectedAccount(null);
+    }
+    setLoading(false);
+    return true;
+  };
+
+  const searchAccounts = async (filters = {}) => {
     setLoading(true);
     setError(null);
 
-    const searchRequest = query ? { query } : {};
+    const searchRequest = {};
+    if (filters.number) searchRequest.number = filters.number;
+    if (filters.name) searchRequest.name = filters.name;
+
     const [data, err] = await handlePostRequest('/api/accounts/search', searchRequest);
 
     if (err) {
@@ -72,6 +115,7 @@ export const useAccounts = () => {
       return [];
     }
 
+    setAccounts(data || []);
     setLoading(false);
     return data || [];
   };
@@ -83,6 +127,8 @@ export const useAccounts = () => {
     error,
     fetchAccounts,
     createAccount,
+    updateAccount,
+    deleteAccount,
     getAccountDetails,
     searchAccounts,
     setSelectedAccount

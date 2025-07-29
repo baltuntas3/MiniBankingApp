@@ -1,11 +1,11 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
-import { useTransactions } from '../hooks/useTransactions';
+import { useTransfers } from '../hooks/useTransfers';
 import { useAccounts } from '../hooks/useAccounts';
 
 const TransactionHistory = () => {
   const [searchParams, setSearchParams] = useSearchParams();
-  const { getTransactionHistory, loading, error } = useTransactions();
+  const { getTransactionHistory, loading, error } = useTransfers();
   const { accounts, fetchAccounts } = useAccounts();
 
   const [transactions, setTransactions] = useState([]);
@@ -20,7 +20,7 @@ const TransactionHistory = () => {
 
   useEffect(() => {
     fetchAccounts();
-  }, []); // Remove fetchAccounts dependency to prevent infinite loop
+  }, [fetchAccounts]);
 
   useEffect(() => {
     if (filters.accountId) {
@@ -38,7 +38,7 @@ const TransactionHistory = () => {
     if (filters.minAmount) queryParams.minAmount = filters.minAmount;
     if (filters.maxAmount) queryParams.maxAmount = filters.maxAmount;
 
-    const data = await getTransactionHistory(filters.accountId, queryParams);
+    const data = await getTransactionHistory(filters.accountId);
     setTransactions(data);
   }, [filters.accountId, filters.startDate, filters.endDate, filters.type, filters.minAmount, filters.maxAmount, getTransactionHistory]);
 
@@ -108,7 +108,7 @@ const TransactionHistory = () => {
               <option value="">Select an account</option>
               {accounts.map(account => (
                 <option key={account.id} value={account.id}>
-                  {account.accountName} - {account.accountNumber}
+                  {account.name} - {account.number}
                 </option>
               ))}
             </select>
@@ -195,8 +195,8 @@ const TransactionHistory = () => {
 
       {filters.accountId && getSelectedAccount() && (
         <div className="account-info">
-          <h3>Account: {getSelectedAccount().accountName}</h3>
-          <p>Current Balance: {getSelectedAccount().currency} {getSelectedAccount().balance?.toFixed(2) || '0.00'}</p>
+          <h3>Account: {getSelectedAccount().name}</h3>
+          <p>Current Balance: {getSelectedAccount().accountType} {getSelectedAccount().balance?.toFixed(2) || '0.00'}</p>
         </div>
       )}
 
@@ -239,10 +239,10 @@ const TransactionHistory = () => {
                 </div>
                 <div className={`col-amount ${transaction.amount < 0 ? 'debit' : 'credit'}`}>
                   {transaction.amount > 0 ? '+' : ''}
-                  {getSelectedAccount()?.currency} {Math.abs(transaction.amount)?.toFixed(2)}
+                  {getSelectedAccount()?.accountType} {Math.abs(transaction.amount)?.toFixed(2)}
                 </div>
                 <div className="col-balance">
-                  {getSelectedAccount()?.currency} {transaction.balanceAfter?.toFixed(2) || 'N/A'}
+                  {getSelectedAccount()?.accountType} {transaction.balanceAfter?.toFixed(2) || 'N/A'}
                 </div>
               </div>
             ))}

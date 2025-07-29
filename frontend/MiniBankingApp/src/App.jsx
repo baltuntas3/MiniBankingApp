@@ -60,7 +60,7 @@ function AppContent() {
             <TransactionHistory />
           </ProtectedRoute>
         } />
-        <Route path="/" element={<Navigate to="/dashboard" replace />} />
+        <Route path="/" element={<Navigate to="/accounts" replace />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </div>

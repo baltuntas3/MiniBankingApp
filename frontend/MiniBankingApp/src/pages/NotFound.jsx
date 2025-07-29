@@ -43,7 +43,6 @@ const NotFound = () => {
             <Link to="/auth/login" className="quick-link">Login</Link>
             <Link to="/register" className="quick-link">Register</Link>
             <Link to="/transfer" className="quick-link">Transfer Money</Link>
-            <Link to="/transactions" className="quick-link">Transaction History</Link>
           </div>
         </div>
       </div>

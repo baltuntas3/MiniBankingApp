@@ -27,7 +27,6 @@ const Dashboard = () => {
       <nav className="dashboard-nav">
         <Link to="/accounts" className="nav-link">Accounts</Link>
         <Link to="/transfer" className="nav-link">Transfer Money</Link>
-        <Link to="/transactions" className="nav-link">Transaction History</Link>
       </nav>
 
       <main className="dashboard-content">

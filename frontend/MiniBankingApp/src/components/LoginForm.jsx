@@ -42,8 +42,8 @@ const LoginForm = () => {
     setAuthMessage(''); // Clear any previous messages
     const success = await login(formData.username, formData.password);
     if (success) {
-      // Navigate to the intended page or dashboard
-      const from = location.state?.from?.pathname || '/dashboard';
+      // Navigate to the intended page or accounts
+      const from = location.state?.from?.pathname || '/accounts';
       navigate(from, { replace: true });
     }
   };
