@@ -1,0 +1,31 @@
+# Build outputs
+target/
+*.jar
+*.war
+*.ear
+
+# IDE files
+.idea/
+*.iml
+.vscode/
+.project
+.classpath
+.settings/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Version control
+.git/
+.gitignore
+
+# Logs
+*.log
+
+# Maven
+.mvn/wrapper/maven-wrapper.jar
+
+# Testing
+test-results/
+coverage/

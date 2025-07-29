@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { useAccounts } from '../hooks/useAccounts';
 import { Link } from 'react-router-dom';
+import ThemeToggle from '../components/ThemeToggle';
 
 const Dashboard = () => {
   const { user, logout } = useAuth();
@@ -19,9 +20,12 @@ const Dashboard = () => {
     <div className="dashboard">
       <header className="dashboard-header">
         <h1>Welcome, {user?.username}</h1>
-        <button onClick={handleLogout} className="btn btn-danger">
-          Logout
-        </button>
+        <div className="header-actions">
+          <ThemeToggle />
+          <button onClick={handleLogout} className="btn btn-danger">
+            Logout
+          </button>
+        </div>
       </header>
 
       <nav className="dashboard-nav">
@@ -38,12 +42,43 @@ const Dashboard = () => {
             <div className="accounts-grid">
               {accounts.map(account => (
                 <div key={account.id} className="account-card">
-                  <h3>{account.accountName}</h3>
-                  <p>Balance: {account.currency} {account.balance}</p>
-                  <p>Account Number: {account.accountNumber}</p>
-                  <Link to={`/accounts/${account.id}`} className="btn btn-primary btn-sm">
-                    View Details
-                  </Link>
+                  <div className="account-header">
+                    <h3>{account.name}</h3>
+                    <span className="account-type">{account.accountType}</span>
+                  </div>
+                  
+                  <div className="account-details">
+                    <p className="balance">
+                      <strong>{account.accountType} {account.balance?.toFixed(2) || '0.00'}</strong>
+                    </p>
+                    <p className="account-number">
+                      Account: {account.number}
+                    </p>
+                    <p className="created-date">
+                      Created: {new Date(account.createdAt).toLocaleDateString()}
+                    </p>
+                  </div>
+                  
+                  <div className="account-actions">
+                    <Link 
+                      to={`/accounts/${account.id}`} 
+                      className="view-btn"
+                    >
+                      View Details
+                    </Link>
+                    <Link 
+                      to={`/transfer?from=${account.id}`} 
+                      className="transfer-btn"
+                    >
+                      Transfer
+                    </Link>
+                    <Link 
+                      to={`/transactions?account=${account.id}`} 
+                      className="history-btn"
+                    >
+                      View Full History
+                    </Link>
+                  </div>
                 </div>
               ))}
             </div>

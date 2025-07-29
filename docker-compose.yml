@@ -1,0 +1,84 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  database:
+    image: postgres:15-alpine
+    container_name: minibanking-db
+    environment:
+      POSTGRES_DB: minibanking
+      POSTGRES_USER: minibanking
+      POSTGRES_PASSWORD: minibanking123
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    networks:
+      - minibanking-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U minibanking -d minibanking"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  # Spring Boot Backend
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: minibanking-backend
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      SPRING_DATASOURCE_URL: jdbc:postgresql://database:5432/minibanking
+      SPRING_DATASOURCE_USERNAME: minibanking
+      SPRING_DATASOURCE_PASSWORD: minibanking123
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      JWT_SECRET: mySecretKey123456789012345678901234567890
+      JWT_EXPIRATION: 86400000
+    ports:
+      - "8080:8080"
+    depends_on:
+      database:
+        condition: service_healthy
+    networks:
+      - minibanking-network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/actuator/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    restart: unless-stopped
+
+  # React Frontend
+  frontend:
+    build:
+      context: ./frontend/MiniBankingApp
+      dockerfile: Dockerfile
+    container_name: minibanking-frontend
+    ports:
+      - "3000:3000"
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - minibanking-network
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3000/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    restart: unless-stopped
+
+networks:
+  minibanking-network:
+    driver: bridge
+    name: minibanking-network
+
+volumes:
+  postgres_data:
+    driver: local
+    name: minibanking-postgres-data
